@@ -1,32 +1,26 @@
 package org.stocker.routes;
 
-import com.jetdrone.vertx.yoke.Middleware;
-import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
-import com.ning.http.client.*;
-import com.ning.http.client.providers.netty.response.NettyResponse;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.Response;
 import org.apache.http.client.utils.URIBuilder;
-import org.joda.time.Months;
 import org.stocker.nseData.NseDataRow;
-import org.vertx.java.core.Handler;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Month;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class UpdateRecordsRoute {
 
     protected final static String NSE_HOST = "nseindia.com";
+    protected final static String HTTP_SCHEME = "http";
     protected final static String API_PATH = "/content/historical/DERIVATIVES/2015/SEP/";
     protected final static String FILE_TEMPLATE = "fo10SEP2015bhav.csv.zip";
     protected static HashMap<String, Boolean> stockMap = new HashMap<>();
@@ -36,7 +30,6 @@ public class UpdateRecordsRoute {
     public UpdateRecordsRoute(DBCollection stockCollection) {
         dbCollection = stockCollection;
     }
-
 
     protected boolean satisfiesCurrentMonthCheck(Date currentDate, Date expiryDate){
         return (expiryDate.after(currentDate) &&
@@ -59,10 +52,9 @@ public class UpdateRecordsRoute {
         URIBuilder uriBuilder =  new URIBuilder();
         uriBuilder.setHost(NSE_HOST);
         uriBuilder.setPath(API_PATH + FILE_TEMPLATE);
-        uriBuilder.setScheme("http");
+        uriBuilder.setScheme(HTTP_SCHEME);
 
         AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
-
 
         asyncHttpClient.prepareGet(uriBuilder.build().toString()).execute(new AsyncCompletionHandler<Object>() {
             @Override
@@ -71,21 +63,15 @@ public class UpdateRecordsRoute {
                 ZipInputStream zipInputStream = new ZipInputStream(response.getResponseBodyAsStream());
                 StringBuilder s = new StringBuilder();
                 byte[] buffer = new byte[1024];
-                int read = 0;
-                ZipEntry entry;
-                while ((entry = zipInputStream.getNextEntry())!= null) {
+                int read;
+                while ((zipInputStream.getNextEntry())!= null) {
                     while ((read = zipInputStream.read(buffer, 0, 1024)) >= 0) {
                         s.append(new String(buffer, 0, read));
                     }
                 }
                 String[] rows = s.toString().split("\n");
 
-
-
-
                 for(int counter=1; counter < rows.length; counter++){
-
-
                     HashMap<NseDataRow,String> rowData = new HashMap<>();
                     String[] values = rows[counter].split(",");
                     //INSTRUMENT,SYMBOL,EXPIRY_DT,STRIKE_PR,OPTION_TYP,OPEN,HIGH,LOW,CLOSE,SETTLE_PR,CONTRACTS,VAL_INLAKH,OPEN_INT,CHG_IN_OI,TIMESTAMP,
@@ -93,6 +79,7 @@ public class UpdateRecordsRoute {
                         continue;
                     }
 
+                    //TODO: Filter for INSTRUMENT and ignore row if any of HIGH, LOW, CLOSE is 0
 
                     rowData.put(NseDataRow.INSTRUMENT, values[0]);
                     rowData.put(NseDataRow.SYMBOL, values[1]);
@@ -110,10 +97,8 @@ public class UpdateRecordsRoute {
                     rowData.put(NseDataRow.CHG_IN_OI, values[13]);
                     rowData.put(NseDataRow.TIMESTAMP, values[14]);
 
-
                     Date expiryDate = dateFormat.parse(rowData.get(NseDataRow.EXPIRY_DT));
                     Date currentDate = dateFormat.parse(rowData.get(NseDataRow.TIMESTAMP));
-
 
                     if( satisfiesCurrentMonthCheck(currentDate, expiryDate) ||
                             satisfiesNextMonthCheck(currentDate, expiryDate) ){
@@ -127,13 +112,6 @@ public class UpdateRecordsRoute {
                     }
                 }
                 return "";
-            }
-
-            @Override
-            public void onThrowable(Throwable t) {
-                int i=0;
-                i++;
-                super.onThrowable(t);
             }
         });
 

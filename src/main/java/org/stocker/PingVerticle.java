@@ -18,14 +18,10 @@ package org.stocker;
  */
 
 import com.google.common.base.Strings;
-import com.jetdrone.vertx.yoke.Yoke;
-import com.jetdrone.vertx.yoke.middleware.BodyParser;
-import com.jetdrone.vertx.yoke.middleware.Router;
 import com.mongodb.*;
 import org.stocker.nseData.NseDataRow;
 import org.stocker.routes.UpdateRecordsRoute;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.json.JsonObject;
@@ -40,13 +36,9 @@ This is a simple Java verticle which receives `ping` messages on the event bus a
 public class PingVerticle extends Verticle {
 
   public void start() {
-
-// load the general config object, loaded by using -config on command line
-      JsonObject appConfig = container.config();
-      Mongo mongo = null;
       DB mongoDB = null;
       try {
-          mongo = new Mongo("localhost", 27017);
+          Mongo mongo = new Mongo("localhost", 27017);
           mongoDB = mongo.getDB("trial1");
       } catch (UnknownHostException e) {
           e.printStackTrace();
@@ -71,26 +63,23 @@ public class PingVerticle extends Verticle {
       matcher.get("/stock/:stock", new Handler<HttpServerRequest>() {
           @Override
           public void handle(HttpServerRequest httpServerRequest) {
-              int y = 0;
-              y++;
               String stock = httpServerRequest.params().get("stock");
               if(Strings.isNullOrEmpty(stock)){
                   httpServerRequest.response().setStatusCode(400).end();
-              };
+              }
 
               BasicDBObject searchQuery = new BasicDBObject();
               searchQuery.put("SYMBOL", stock);
 
               DBCursor cursor = stockCollection.find(searchQuery);
 
-              while (cursor.hasNext()) {
+              if (cursor.hasNext()) {
                   JsonObject jsonObject = new JsonObject();
                   DBObject object = cursor.next();
                   jsonObject.putString(NseDataRow.LOW.toString(), object.get("LOW").toString());
                   jsonObject.putString(NseDataRow.HIGH.toString(), object.get("HIGH").toString());
                   jsonObject.putString(NseDataRow.CLOSE.toString(), object.get("CLOSE").toString());
                   httpServerRequest.response().end(jsonObject.toString());
-                  break;
               }
           }
       });
