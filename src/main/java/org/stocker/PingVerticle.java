@@ -47,18 +47,7 @@ public class PingVerticle extends Verticle {
       final DBCollection stockCollection = mongoDB.getCollection("stocks");
 
       RouteMatcher matcher = new RouteMatcher();
-      vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
-          @Override
-          public void handle(HttpServerRequest httpServerRequest) {
-              UpdateRecordsRoute updateRecordsRoute = new UpdateRecordsRoute(stockCollection);
-              try {
-                  updateRecordsRoute.generateURL();
-              } catch (URISyntaxException e) {
-                  e.printStackTrace();
-              }
-              httpServerRequest.response().end("");
-          }
-      }).listen(8888);
+
 
       matcher.get("/stock/:stock", new Handler<HttpServerRequest>() {
           @Override
