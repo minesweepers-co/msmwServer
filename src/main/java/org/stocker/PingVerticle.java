@@ -20,10 +20,9 @@ package org.stocker;
 import com.google.common.base.Strings;
 import com.jetdrone.vertx.yoke.Yoke;
 import com.jetdrone.vertx.yoke.middleware.BodyParser;
-import com.jetdrone.vertx.yoke.middleware.Logger;
 import com.jetdrone.vertx.yoke.middleware.Router;
 import com.mongodb.*;
-import com.ning.http.client.*;
+import com.ning.http.client.AsyncHttpClient;
 import org.joda.time.LocalDate;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.nseData.NseDataRow;
@@ -34,15 +33,14 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
 import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 /*
 This is a simple Java verticle which receives `ping` messages on the event bus and sends back `pong` replies
  */
 public class PingVerticle extends Verticle {
-    java.util.logging.Logger logger = java.util.logging.Logger.getLogger(PingVerticle.class.getName());
+    Logger logger = Logger.getLogger(PingVerticle.class.getName());
 
   public void start() {
 
@@ -68,7 +66,8 @@ public class PingVerticle extends Verticle {
       Router router = new Router();
       router.post("/update/stocks/:date", updateRecordsRoute);
 
-      yoke.use(new Logger()).use(new BodyParser()).use(router).listen(4080);
+      yoke.use(new com.jetdrone.vertx.yoke.middleware.Logger())
+              .use(new BodyParser()).use(router).listen(4080);
 
 
       RouteMatcher matcher = new RouteMatcher();

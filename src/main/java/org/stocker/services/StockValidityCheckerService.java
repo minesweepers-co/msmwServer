@@ -47,6 +47,7 @@ public class StockValidityCheckerService {
         currentCalender.setTime(currentDate);
         Calendar expiryCalender = Calendar.getInstance();
         expiryCalender.setTime(expiryDate);
+        // TODO check if this is valid @shahmharsh
         int diffYear = expiryCalender.get(Calendar.YEAR) - currentCalender.get(Calendar.YEAR);
         int diffMonth = diffYear * 12 + expiryCalender.get(Calendar.MONTH) - currentCalender.get(Calendar.MONTH);
         return diffMonth == 1;
