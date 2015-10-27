@@ -22,6 +22,7 @@ public class StockDBClientImpl implements StockDBClient {
         this.stockCollection = stockCollection;
     }
 
+    @Override
     public boolean insert(NseDataObj dataObj){
         BasicDBObject document = new BasicDBObject();
         for(Map.Entry dataEntry : dataObj.rowData.entrySet()){
