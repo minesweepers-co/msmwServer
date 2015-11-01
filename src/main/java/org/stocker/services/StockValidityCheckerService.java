@@ -17,18 +17,9 @@ public class StockValidityCheckerService {
     protected final static DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
 
     public static boolean isDataValid(NseDataObj dataObj){
-        Date expiryDate;
-        Date currentDate;
-        try {
-            expiryDate = dateFormat.parse(dataObj.rowData.get(NseDataRow.EXPIRY_DT).toUpperCase(Locale.US));
-            currentDate = dateFormat.parse(dataObj.rowData.get(NseDataRow.TIMESTAMP).toUpperCase(Locale.US));
-        } catch (ParseException e) {
-            // coudnt parse date , invalid data
-            return false;
-        }
 
-        return ( satisfiesCurrentMonthCheck(currentDate, expiryDate)
-                || satisfiesNextMonthCheck(currentDate, expiryDate) )
+        return ( satisfiesCurrentMonthCheck(dataObj.timestamp, dataObj.expiryDate)
+                || satisfiesNextMonthCheck(dataObj.timestamp, dataObj.expiryDate) )
                 && ( !dataObj.rowData.get(NseDataRow.LOW).equals("0")
                      && !dataObj.rowData.get(NseDataRow.HIGH).equals("0")
                      && !dataObj.rowData.get(NseDataRow.CLOSE).equals("0"));

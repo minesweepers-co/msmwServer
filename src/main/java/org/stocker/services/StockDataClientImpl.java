@@ -2,8 +2,10 @@ package org.stocker.services;
 
 import com.ning.http.client.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.nseData.NseDataObj;
+import org.stocker.util.DateParsers;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,7 +25,6 @@ public class StockDataClientImpl implements StockDataClient{
 
     protected AsyncHttpClient asyncHttpClient;
     protected ZipReader zipReader;
-    protected  static final DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
 
     public StockDataClientImpl(AsyncHttpClient asyncHttpClient, ZipReader zipReader){
         this.asyncHttpClient = asyncHttpClient;
@@ -31,7 +32,7 @@ public class StockDataClientImpl implements StockDataClient{
     }
 
     @Override
-    public List<NseDataObj> getStockData(Date date, ReportType type)  throws StockDataNotFoundForGivenDateException {
+    public List<NseDataObj> getStockData(Date date, ReportType type) throws StockDataNotFoundForGivenDateException, NseDataObjParseException {
 
         final List<NseDataObj> dataObjList = new ArrayList<>();
         try {
@@ -48,7 +49,13 @@ public class StockDataClientImpl implements StockDataClient{
 
             StringBuilder stringBuilder = zipReader.readInputSteamFromZip(response.getResponseBodyAsStream());
             String data = stringBuilder.toString();
+            boolean isFirst = true;
             for (String dataRow : data.split("\n")){
+                if(isFirst){
+                    // ignore first row we get from data , since it has just the headers
+                    isFirst = false;
+                    continue;
+                }
                 NseDataObj dataObj = new NseDataObj();
                 dataObj.deserialize(dataRow);
                 dataObjList.add(dataObj);
@@ -65,7 +72,7 @@ public class StockDataClientImpl implements StockDataClient{
         URIBuilder uriBuilder =  new URIBuilder();
         uriBuilder.setScheme(StockDataServiceConstants.HTTP_SCHEME);
         uriBuilder.setHost(StockDataServiceConstants.NSE_HOST);
-        String dateString = dateFormat.format(date).toUpperCase(Locale.US);
+        String dateString = DateParsers.stockDataClientDateFormat.format(date).toUpperCase(Locale.US);
         String[] dateParts = dateString.split("-");
         ///DERIVATIVES/2015/SEP/fo10SEP2015bhav.csv.zip
         uriBuilder.setPath(StockDataServiceConstants.API_PATH + dateParts[2] + "/" + dateParts[1] + "/" + "fo" + dateString.replace("-", "") + type.reportType);

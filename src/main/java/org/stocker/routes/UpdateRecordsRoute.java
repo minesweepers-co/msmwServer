@@ -3,6 +3,7 @@ package org.stocker.routes;
 import com.jetdrone.vertx.yoke.Middleware;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
+import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.nseData.Instrument;
 import org.stocker.nseData.NseDataObj;
@@ -50,9 +51,15 @@ public class UpdateRecordsRoute extends Middleware {
 
         try {
             updateStocksForDate(dateObj);
-        } catch (StockDataNotFoundForGivenDateException e) {
-            response.setStatusCode(404);
-            response.end("no data found for this date");
+        } catch (StockDataNotFoundForGivenDateException | NseDataObjParseException e) {
+            int statusCode;
+            if(e instanceof StockDataNotFoundForGivenDateException){
+                statusCode = 404;
+            } else {
+                statusCode = 500;
+            }
+            response.setStatusCode(statusCode);
+            response.end(new JsonObject().putString("error", e.getLocalizedMessage()));
             return;
         }
 
@@ -60,7 +67,7 @@ public class UpdateRecordsRoute extends Middleware {
         response.end();
     }
 
-    public void updateStocksForDate(Date dateObj) throws StockDataNotFoundForGivenDateException {
+    public void updateStocksForDate(Date dateObj) throws StockDataNotFoundForGivenDateException, NseDataObjParseException {
         ArrayList<String> processedStocksList = new ArrayList<>();
 
         List<NseDataObj> dataObjList;

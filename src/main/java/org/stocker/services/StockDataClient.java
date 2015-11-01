@@ -1,5 +1,6 @@
 package org.stocker.services;
 
+import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.nseData.NseDataObj;
 
@@ -10,5 +11,5 @@ import java.util.List;
  *
  */
 public interface StockDataClient {
-    List<NseDataObj> getStockData(Date date, ReportType type) throws StockDataNotFoundForGivenDateException;
+    List<NseDataObj> getStockData(Date date, ReportType type) throws StockDataNotFoundForGivenDateException, NseDataObjParseException;
 }
