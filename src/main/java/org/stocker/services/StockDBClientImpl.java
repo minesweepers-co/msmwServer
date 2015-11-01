@@ -2,11 +2,12 @@ package org.stocker.services;
 
 import com.google.common.base.Strings;
 import com.mongodb.*;
+import org.stocker.exceptions.StockReadException;
 import org.stocker.nseData.NseDataObj;
 import org.stocker.nseData.NseDataRow;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,27 +32,39 @@ public class StockDBClientImpl implements StockDBClient {
     }
 
     @Override
-    public JsonObject retrieve(String symbol) {
-        JsonObject jsonObject = new JsonObject();
-        if (Strings.isNullOrEmpty(symbol)) {
-            return jsonObject.putString("error", "symbol should never be empty or null");
+    public JsonArray retrieve(String symbol) throws StockReadException {
+        if(Strings.isNullOrEmpty(symbol)){
+            throw new StockReadException("empty symbol");
         }
-
-        BasicDBObject searchQuery = new BasicDBObject();
-        searchQuery.put(NseDataRow.SYMBOL.name(), symbol);
-
-        DBCursor cursor = stockCollection.find(searchQuery);
+        DBCursor cursor = stockCollection.find();
+        JsonArray response = new JsonArray();
         if (cursor.hasNext()) {
             DBObject object = cursor.next();
+            JsonObject jsonObject = new JsonObject();
             jsonObject.putString(NseDataRow.SYMBOL.toString(), object.get(NseDataRow.SYMBOL.toString()).toString());
             jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
             jsonObject.putString(NseDataRow.HIGH.toString(), object.get(NseDataRow.HIGH.toString()).toString());
             jsonObject.putString(NseDataRow.CLOSE.toString(), object.get(NseDataRow.CLOSE.toString()).toString());
+            response.add(jsonObject);
         }
-        return jsonObject;
+        return response;
     }
 
-    public List<NseDataObj> retrieve(){
-        return null;
+    @Override
+    public JsonArray retrieve(BasicDBObject queryConditions) throws StockReadException {
+        if(queryConditions == null || queryConditions.isEmpty()){
+            throw new StockReadException("null/ empty queryConditions");
+        }
+        DBCursor cursor = stockCollection.find(queryConditions);
+        JsonArray response = new JsonArray();
+        if (cursor.hasNext()) {
+            DBObject object = cursor.next();
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
+            jsonObject.putString(NseDataRow.HIGH.toString(), object.get(NseDataRow.HIGH.toString()).toString());
+            jsonObject.putString(NseDataRow.CLOSE.toString(), object.get(NseDataRow.CLOSE.toString()).toString());
+            response.add(jsonObject);
+        }
+        return response;
     }
 }

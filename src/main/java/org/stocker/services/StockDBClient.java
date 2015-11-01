@@ -1,6 +1,9 @@
 package org.stocker.services;
 
+import com.mongodb.BasicDBObject;
+import org.stocker.exceptions.StockReadException;
 import org.stocker.nseData.NseDataObj;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -8,5 +11,6 @@ import org.vertx.java.core.json.JsonObject;
  */
 public interface StockDBClient {
     boolean insert(NseDataObj dataObj);
-    JsonObject retrieve(String symbol); // TODO: Consider changing return type to NseDataObj
+    JsonArray retrieve(String symbol) throws StockReadException; // TODO: Consider changing return type to NseDataObj
+    JsonArray retrieve(BasicDBObject queryConditions) throws StockReadException;
 }
