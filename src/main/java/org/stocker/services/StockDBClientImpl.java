@@ -43,6 +43,7 @@ public class StockDBClientImpl implements StockDBClient {
         DBCursor cursor = stockCollection.find(searchQuery);
         if (cursor.hasNext()) {
             DBObject object = cursor.next();
+            jsonObject.putString(NseDataRow.SYMBOL.toString(), object.get(NseDataRow.SYMBOL.toString()).toString());
             jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
             jsonObject.putString(NseDataRow.HIGH.toString(), object.get(NseDataRow.HIGH.toString()).toString());
             jsonObject.putString(NseDataRow.CLOSE.toString(), object.get(NseDataRow.CLOSE.toString()).toString());
