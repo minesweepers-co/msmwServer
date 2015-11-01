@@ -1,7 +1,7 @@
 package org.stocker.services;
 
+import com.google.common.base.Strings;
 import com.mongodb.*;
-import com.sun.istack.internal.NotNull;
 import org.stocker.nseData.NseDataObj;
 import org.stocker.nseData.NseDataRow;
 import org.vertx.java.core.json.JsonObject;
@@ -31,12 +31,16 @@ public class StockDBClientImpl implements StockDBClient {
     }
 
     @Override
-    public JsonObject retrieve(@NotNull String symbol) {
+    public JsonObject retrieve(String symbol) {
+        JsonObject jsonObject = new JsonObject();
+        if (Strings.isNullOrEmpty(symbol)) {
+            return jsonObject.putString("error", "symbol should never be empty or null");
+        }
+
         BasicDBObject searchQuery = new BasicDBObject();
         searchQuery.put(NseDataRow.SYMBOL.name(), symbol);
 
         DBCursor cursor = stockCollection.find(searchQuery);
-        JsonObject jsonObject = new JsonObject();
         if (cursor.hasNext()) {
             DBObject object = cursor.next();
             jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
