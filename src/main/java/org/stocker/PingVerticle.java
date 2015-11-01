@@ -17,18 +17,18 @@ package org.stocker;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 
-import com.google.common.base.Strings;
 import com.jetdrone.vertx.yoke.Yoke;
 import com.jetdrone.vertx.yoke.middleware.BodyParser;
 import com.jetdrone.vertx.yoke.middleware.Router;
-import com.mongodb.*;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.Mongo;
 import com.ning.http.client.AsyncHttpClient;
 import org.joda.time.LocalDate;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
-import org.stocker.nseData.NseDataRow;
+import org.stocker.routes.GetStockRoute;
 import org.stocker.routes.UpdateRecordsRoute;
 import org.stocker.services.*;
-import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
@@ -52,7 +52,6 @@ public class PingVerticle extends Verticle {
           Mongo mongo = new Mongo(dbConfig.getString("host"), dbConfig.getInteger("port"));
           mongoDB = mongo.getDB(dbConfig.getString("db_name"));
       } catch (UnknownHostException e) {
-
           e.printStackTrace();
       }
 
@@ -61,45 +60,19 @@ public class PingVerticle extends Verticle {
       ZipReader zipReader = new ZipReaderImpl();
       StockDBClient stockDBClient = new StockDBClientImpl(stockCollection);
       StockDataClient stockDataClient = new StockDataClientImpl(asyncHttpClient, zipReader);
-      UpdateRecordsRoute updateRecordsRoute =  new UpdateRecordsRoute(stockDataClient, stockDBClient);
+      UpdateRecordsRoute updateRecordsRoute = new UpdateRecordsRoute(stockDataClient, stockDBClient);
+      GetStockRoute getStockRoute = new GetStockRoute(stockDBClient);
 
       Router router = new Router();
       router.post("/update/stocks/:date", updateRecordsRoute);
+      router.get("/stock/:stock", getStockRoute);
 
       yoke.use(new com.jetdrone.vertx.yoke.middleware.Logger())
               .use(new BodyParser()).use(router).listen(4080);
 
-
-      RouteMatcher matcher = new RouteMatcher();
-
-
-      matcher.get("/stock/:stock", httpServerRequest -> {
-          String stock = httpServerRequest.params().get("stock");
-          if (Strings.isNullOrEmpty(stock)) {
-              httpServerRequest.response().setStatusCode(400).end();
-          }
-
-          BasicDBObject searchQuery = new BasicDBObject();
-          searchQuery.put("SYMBOL", stock);
-
-          DBCursor cursor = stockCollection.find(searchQuery);
-
-          if (cursor.hasNext()) {
-              JsonObject jsonObject = new JsonObject();
-              DBObject object = cursor.next();
-              jsonObject.putString(NseDataRow.LOW.toString(), object.get("LOW").toString());
-              jsonObject.putString(NseDataRow.HIGH.toString(), object.get("HIGH").toString());
-              jsonObject.putString(NseDataRow.CLOSE.toString(), object.get("CLOSE").toString());
-              httpServerRequest.response().end(jsonObject.toString());
-          }
-      });
-      vertx.createHttpServer().requestHandler(matcher).listen(4080);
-
       //populateDB(updateRecordsRoute);
       container.logger().info("PingVerticle started : 4080");
-
   }
-
 
     /**
      *  use only for populating DB adhoc . NOT PROD CODE
@@ -107,7 +80,7 @@ public class PingVerticle extends Verticle {
      */
     private void populateDB(UpdateRecordsRoute updateRecordsRoute) {
         LocalDate localDate = LocalDate.now();
-        for(int i=0 ; i < 365 ; i++){
+        for(int i=0 ; i < 10 ; i++){
             Date date = localDate.minusDays(i).toDate();
             try {
                 updateRecordsRoute.updateStocksForDate(date);
