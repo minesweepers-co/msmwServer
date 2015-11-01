@@ -2,7 +2,7 @@
 
   // Java verticle
   "main":"org.stocker.PingVerticle",
-  "includes": "com.jetdrone~yoke~1.0.0-SNAPSHOT",
+  "includes": "com.jetdrone~yoke~2.0.20",
   // In this example we also provide various other versions of the main verticle, you can uncomment this and
   // play around:
 
