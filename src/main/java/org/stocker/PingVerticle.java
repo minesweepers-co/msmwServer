@@ -25,6 +25,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.Mongo;
 import com.ning.http.client.AsyncHttpClient;
 import org.joda.time.LocalDate;
+import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.routes.GetStockRoute;
 import org.stocker.routes.UpdateRecordsRoute;
@@ -86,6 +87,8 @@ public class PingVerticle extends Verticle {
                 updateRecordsRoute.updateStocksForDate(date);
             } catch (StockDataNotFoundForGivenDateException e) {
                 logger.warning(" failed for date - " + date.toString());
+            } catch (NseDataObjParseException e) {
+                logger.warning(" failed with parsing error for date - " + date.toString());
             }
         }
     }

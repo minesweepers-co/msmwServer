@@ -27,6 +27,8 @@ public class StockDBClientImpl implements StockDBClient {
         for(Map.Entry dataEntry : dataObj.rowData.entrySet()){
             document.put(dataEntry.getKey().toString(), dataEntry.getValue().toString());
         }
+        document.put(NseDataRow.EXPIRY_DT.name(), dataObj.expiryDate);
+        document.put(NseDataRow.TIMESTAMP.name(), dataObj.timestamp);
         WriteResult result = stockCollection.insert(document);
         return result.getLastError().ok();
     }
