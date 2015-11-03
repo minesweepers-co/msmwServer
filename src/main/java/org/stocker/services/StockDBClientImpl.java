@@ -38,7 +38,9 @@ public class StockDBClientImpl implements StockDBClient {
         if(Strings.isNullOrEmpty(symbol)){
             throw new StockReadException("empty symbol");
         }
-        DBCursor cursor = stockCollection.find();
+        BasicDBObject searchQuery = new BasicDBObject();
+        searchQuery.put(NseDataRow.SYMBOL.name(), symbol);
+        DBCursor cursor = stockCollection.find(searchQuery);
         JsonArray response = new JsonArray();
         if (cursor.hasNext()) {
             DBObject object = cursor.next();
