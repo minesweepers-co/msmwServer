@@ -3,12 +3,18 @@ package org.stocker.routes;
 import com.google.common.base.Strings;
 import com.jetdrone.vertx.yoke.Middleware;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
+import org.stocker.exceptions.ErrorObjectAdapter;
+import org.stocker.exceptions.ServiceException;
 import org.stocker.exceptions.StockReadException;
 import org.stocker.prediction.DataAggregator;
 import org.stocker.prediction.DataAggregatorResponseObj;
 import org.stocker.prediction.DataTemplateRange;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
+
+import static org.stocker.exceptions.ServiceException.BAD_REQUEST;
+import static org.stocker.exceptions.ServiceException.REQUEST_IN_INVALID_FORMAT;
+import static org.stocker.exceptions.ServiceException.STOCK_INFO_NOT_FOUND;
 import static org.stocker.prediction.DataTemplateRange.valueOf;
 
 /**
@@ -28,7 +34,7 @@ public class GetAggregatedDataTemplatedRoute extends Middleware{
         String type = request.getParameter("type");
 
         if(Strings.isNullOrEmpty(symbol) || Strings.isNullOrEmpty(type)){
-            request.response().setStatusCode(400).end(new JsonObject().putString("error", "null/ empty url values"));
+            request.response().setStatusCode(400).end(ErrorObjectAdapter.generateErrorObj(BAD_REQUEST));
             return;
         }
 
@@ -36,7 +42,7 @@ public class GetAggregatedDataTemplatedRoute extends Middleware{
         try {
             range = valueOf(type);
         }catch (IllegalArgumentException e){
-            request.response().setStatusCode(400).end(new JsonObject().putString("error", "Illegal type"));
+            request.response().setStatusCode(400).end(ErrorObjectAdapter.generateErrorObj(BAD_REQUEST));
             return;
         }
 
@@ -51,7 +57,7 @@ public class GetAggregatedDataTemplatedRoute extends Middleware{
 
             request.response().setStatusCode(200).end(response);
         } catch (StockReadException e) {
-            request.response().setStatusCode(404).end(new JsonObject().putString("error", "Could not read stock info"));
+            request.response().setStatusCode(404).end(ErrorObjectAdapter.generateErrorObj(STOCK_INFO_NOT_FOUND));
         }
     }
 

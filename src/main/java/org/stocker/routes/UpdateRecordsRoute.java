@@ -3,7 +3,9 @@ package org.stocker.routes;
 import com.jetdrone.vertx.yoke.Middleware;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
+import org.stocker.exceptions.ErrorObjectAdapter;
 import org.stocker.exceptions.NseDataObjParseException;
+import org.stocker.exceptions.ServiceException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
 import org.stocker.nseData.Instrument;
 import org.stocker.nseData.NseDataObj;
@@ -45,7 +47,7 @@ public class UpdateRecordsRoute extends Middleware {
            dateObj =  dateFormat.parse(date);
         } catch (ParseException e) {
             response.setStatusCode(400);
-            response.end(new JsonObject().putString("error", " date in invalid format "));
+            response.end(ErrorObjectAdapter.generateErrorObj(ServiceException.REQUEST_IN_INVALID_FORMAT));
             return;
         }
 
