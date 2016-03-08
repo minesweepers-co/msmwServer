@@ -52,12 +52,11 @@ public class GetStockRoute extends Middleware {
             BasicDBObject queryObject = new BasicDBObject();
             queryObject.put(SYMBOL.name(), stock);
             queryObject.put(TIMESTAMP.name(), BasicDBObjectBuilder.start("$lte", dateObj).get());
-
             results = mStockDBClient.retrieve(queryObject);
         } catch (StockReadException e) {
             yokeRequest.response().setStatusCode(500).end(new JsonObject().putString("error", e.getLocalizedMessage()));
             return;
         }
-        yokeRequest.response().end(results);
+        yokeRequest.response().setStatusCode(200).end(results);
     }
 }
