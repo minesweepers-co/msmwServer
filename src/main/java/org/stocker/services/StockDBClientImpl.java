@@ -42,13 +42,15 @@ public class StockDBClientImpl implements StockDBClient {
         searchQuery.put(NseDataRow.SYMBOL.name(), symbol);
         DBCursor cursor = stockCollection.find(searchQuery);
         JsonArray response = new JsonArray();
-        if (cursor.hasNext()) {
+        while (cursor.hasNext()) {
             DBObject object = cursor.next();
             JsonObject jsonObject = new JsonObject();
+            // TODO : change this to auto mapping
             jsonObject.putString(NseDataRow.SYMBOL.toString(), object.get(NseDataRow.SYMBOL.toString()).toString());
             jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
             jsonObject.putString(NseDataRow.HIGH.toString(), object.get(NseDataRow.HIGH.toString()).toString());
             jsonObject.putString(NseDataRow.CLOSE.toString(), object.get(NseDataRow.CLOSE.toString()).toString());
+            jsonObject.putString(NseDataRow.TIMESTAMP.toString(), object.get(NseDataRow.TIMESTAMP.toString()).toString());
             response.add(jsonObject);
         }
         return response;
@@ -61,12 +63,14 @@ public class StockDBClientImpl implements StockDBClient {
         }
         DBCursor cursor = stockCollection.find(queryConditions);
         JsonArray response = new JsonArray();
-        if (cursor.hasNext()) {
+        while (cursor.hasNext()) {
             DBObject object = cursor.next();
             JsonObject jsonObject = new JsonObject();
+            // TODO : change this to auto mapping
             jsonObject.putString(NseDataRow.LOW.toString(), object.get(NseDataRow.LOW.toString()).toString());
             jsonObject.putString(NseDataRow.HIGH.toString(), object.get(NseDataRow.HIGH.toString()).toString());
             jsonObject.putString(NseDataRow.CLOSE.toString(), object.get(NseDataRow.CLOSE.toString()).toString());
+            jsonObject.putString(NseDataRow.TIMESTAMP.toString(), object.get(NseDataRow.TIMESTAMP.toString()).toString());
             response.add(jsonObject);
         }
         return response;

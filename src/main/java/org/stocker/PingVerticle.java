@@ -27,8 +27,9 @@ import com.ning.http.client.AsyncHttpClient;
 import org.joda.time.LocalDate;
 import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
-import org.stocker.routes.GetStockRoute;
-import org.stocker.routes.UpdateRecordsRoute;
+import org.stocker.prediction.DataAggregator;
+import org.stocker.prediction.PredictionService;
+import org.stocker.routes.*;
 import org.stocker.services.*;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
@@ -57,22 +58,35 @@ public class PingVerticle extends Verticle {
       }
 
       final DBCollection stockCollection = mongoDB.getCollection("stocks");
+      //TODO : inject these guys from a shared module which is a singleton instance
+      // these guys ->
       AsyncHttpClient asyncHttpClient = new AsyncHttpClient();
       ZipReader zipReader = new ZipReaderImpl();
       StockDBClient stockDBClient = new StockDBClientImpl(stockCollection);
       StockDataClient stockDataClient = new StockDataClientImpl(asyncHttpClient, zipReader);
+      DataAggregator dataAggregator = new DataAggregator(stockDBClient);
+      PredictionService predictionService = new PredictionService(dataAggregator);
+      //  ^ these guys
+
+      // routes
+      GetPredictionTemplatedRoute getPredictionTemplatedRoute = new GetPredictionTemplatedRoute(predictionService);
       UpdateRecordsRoute updateRecordsRoute = new UpdateRecordsRoute(stockDataClient, stockDBClient);
       GetStockRoute getStockRoute = new GetStockRoute(stockDBClient);
+      GetAggregatedDataTemplatedRoute getAggregatedDataTemplatedRoute = new GetAggregatedDataTemplatedRoute(dataAggregator);
 
       Router router = new Router();
+      router.get("/healthCheck", new HealthCheck());
       router.post("/update/stocks/:date", updateRecordsRoute);
-      router.get("/stock/:stock", getStockRoute);
+      router.get("/stock/:stock/date/:date", getStockRoute);
+      router.get("/prediction/stock/:stock/type/:type", getPredictionTemplatedRoute);
+      router.get("/data/stock/:stock/type/:type", getAggregatedDataTemplatedRoute);
 
       yoke.use(new com.jetdrone.vertx.yoke.middleware.Logger())
               .use(new BodyParser()).use(router).listen(4080);
 
       //populateDB(updateRecordsRoute);
       container.logger().info("PingVerticle started : 4080");
+      System.out.println("PingVerticle.start - ");
   }
 
     /**
