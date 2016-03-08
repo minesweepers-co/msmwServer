@@ -5,6 +5,8 @@ import com.jetdrone.vertx.yoke.Middleware;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
+import org.stocker.exceptions.ErrorObjectAdapter;
+import org.stocker.exceptions.ServiceException;
 import org.stocker.exceptions.StockReadException;
 import org.stocker.services.StockDBClient;
 import org.stocker.util.DateParsers;
@@ -33,7 +35,7 @@ public class GetStockRoute extends Middleware {
         String stock = yokeRequest.params().get("stock");
         String date = yokeRequest.params().get("date");
         if (Strings.isNullOrEmpty(stock)  || Strings.isNullOrEmpty(date)) {
-            yokeRequest.response().setStatusCode(400).end();
+            yokeRequest.response().setStatusCode(400).end(ErrorObjectAdapter.generateErrorObj(ServiceException.BAD_REQUEST));
             return;
         }
         Date dateObj;
@@ -41,7 +43,7 @@ public class GetStockRoute extends Middleware {
         try {
             dateObj = DateParsers.ISODateFormat.parse(date);
         } catch (ParseException e) {
-            yokeRequest.response().setStatusCode(400).end();
+            yokeRequest.response().setStatusCode(400).end(ErrorObjectAdapter.generateErrorObj(ServiceException.REQUEST_IN_INVALID_FORMAT));
             return;
         }
 
@@ -49,9 +51,6 @@ public class GetStockRoute extends Middleware {
         try {
             BasicDBObject queryObject = new BasicDBObject();
             queryObject.put(SYMBOL.name(), stock);
-//            JsonObject dateQuery = new JsonObject();
-//            dateQuery.putValue("$lte", dateObj);
-//            queryObject.put(TIMESTAMP.name(), dateQuery);
             queryObject.put(TIMESTAMP.name(), BasicDBObjectBuilder.start("$lte", dateObj).get());
 
             results = mStockDBClient.retrieve(queryObject);
