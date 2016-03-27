@@ -70,16 +70,20 @@ public class PingVerticle extends Verticle {
 
       // routes
       GetPredictionTemplatedRoute getPredictionTemplatedRoute = new GetPredictionTemplatedRoute(predictionService);
+      GetPredictionRoute getPredictionRoute = new GetPredictionRoute(predictionService);
       UpdateRecordsRoute updateRecordsRoute = new UpdateRecordsRoute(stockDataClient, stockDBClient);
       GetStockRoute getStockRoute = new GetStockRoute(stockDBClient);
       GetAggregatedDataTemplatedRoute getAggregatedDataTemplatedRoute = new GetAggregatedDataTemplatedRoute(dataAggregator);
+      GetAggregatedDataRoute getAggregatedDataRoute = new GetAggregatedDataRoute(dataAggregator);
 
       Router router = new Router();
       router.get("/healthCheck", new HealthCheck());
       router.post("/update/stocks/:date", updateRecordsRoute);
       router.get("/stock/:stock/date/:date", getStockRoute);
       router.get("/prediction/stock/:stock/type/:type", getPredictionTemplatedRoute);
+      router.get("/prediction/stock/:stock", getPredictionRoute);
       router.get("/data/stock/:stock/type/:type", getAggregatedDataTemplatedRoute);
+      router.get("/data/stock/:stock", getAggregatedDataRoute);
 
       yoke.use(new com.jetdrone.vertx.yoke.middleware.Logger())
               .use(new BodyParser()).use(router).listen(4080);
