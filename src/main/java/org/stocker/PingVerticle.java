@@ -34,6 +34,7 @@ import org.stocker.services.*;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -98,16 +99,12 @@ public class PingVerticle extends Verticle {
      * @param updateRecordsRoute
      */
     private void populateDB(UpdateRecordsRoute updateRecordsRoute) {
-        LocalDate localDate = LocalDate.now();
-        for(int i=0 ; i < 10 ; i++){
-            Date date = localDate.minusDays(i).toDate();
-            try {
-                updateRecordsRoute.updateStocksForDate(date);
-            } catch (StockDataNotFoundForGivenDateException e) {
-                logger.warning(" failed for date - " + date.toString());
-            } catch (NseDataObjParseException e) {
-                logger.warning(" failed with parsing error for date - " + date.toString());
-            }
+        Date date = LocalDate.now().toDate();
+
+        try {
+            updateRecordsRoute.updateStocksForDate(date);
+        } catch (NseDataObjParseException | StockDataNotFoundForGivenDateException | IOException e) {
+            logger.warning(" failed with error - " + e.getMessage() + " for date - " + date.toString());
         }
     }
 }
