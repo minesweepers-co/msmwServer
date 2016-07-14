@@ -7,24 +7,19 @@ import org.stocker.exceptions.ErrorObjectAdapter;
 import org.stocker.exceptions.NseDataObjParseException;
 import org.stocker.exceptions.ServiceException;
 import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
-import org.stocker.nseData.Instrument;
-import org.stocker.nseData.NseDataObj;
-import org.stocker.services.ReportType;
+import org.stocker.nasdaqData.NasdaqDataObj;
 import org.stocker.services.StockDBClient;
 import org.stocker.services.StockDataClient;
-import org.stocker.services.StockValidityCheckerService;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
+import yahoofinance.Stock;
+import yahoofinance.YahooFinance;
+import yahoofinance.histquotes.Interval;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.stocker.nseData.NseDataRow.INSTRUMENT;
-import static org.stocker.nseData.NseDataRow.SYMBOL;
+import java.util.*;
 
 public class UpdateRecordsRoute extends Middleware {
 
@@ -53,7 +48,7 @@ public class UpdateRecordsRoute extends Middleware {
 
         try {
             updateStocksForDate(dateObj);
-        } catch (StockDataNotFoundForGivenDateException | NseDataObjParseException e) {
+        } catch (StockDataNotFoundForGivenDateException | NseDataObjParseException | IOException e) {
             int statusCode;
             if(e instanceof StockDataNotFoundForGivenDateException){
                 statusCode = 404;
@@ -69,28 +64,19 @@ public class UpdateRecordsRoute extends Middleware {
         response.end();
     }
 
-    public void updateStocksForDate(Date dateObj) throws StockDataNotFoundForGivenDateException, NseDataObjParseException {
-        ArrayList<String> processedStocksList = new ArrayList<>();
+    public void updateStocksForDate(Date dateObj) throws StockDataNotFoundForGivenDateException, NseDataObjParseException, IOException {
+        //TODO : Find an API which will give all US stocks and use that
+        List<String> usStockSymbols = Arrays.asList("TSLA", "GOOG");
+        Calendar from = Calendar.getInstance();
+        from.setTime(dateObj);
 
-        List<NseDataObj> dataObjList;
-        dataObjList = stockDataClient.getStockData(dateObj, ReportType.BHAV_REPORT);
-        List<NseDataObj> validStocks = dataObjList.stream()
-                                        .filter(dataObj -> StockValidityCheckerService.isDataValid(dataObj)
-                                                && isValidAsPerInstrument(dataObj))
-                                        .collect(Collectors.toList());
-
-        for(NseDataObj obj : validStocks){
-            if(processedStocksList.contains(obj.rowData.get(SYMBOL))){
-                continue;
-            }
-            stockDBClient.insert(obj);
-            processedStocksList.add(obj.rowData.get(SYMBOL));
+        ArrayList<NasdaqDataObj> stocks = new ArrayList<>();
+        for (String stockSymbol : usStockSymbols) {
+            Stock stock = YahooFinance.get(stockSymbol, from, Interval.DAILY);
+            NasdaqDataObj nasdaqDataObj = new NasdaqDataObj(stock);
+            stocks.add(nasdaqDataObj);
         }
-    }
 
-    // instrument sorter
-    protected boolean isValidAsPerInstrument(NseDataObj dataObj){
-        return dataObj.rowData.get(INSTRUMENT).equals(Instrument.FUTIDX.toString()) ||
-                dataObj.rowData.get(INSTRUMENT).equals(Instrument.FUTSTK.toString());
+        //TODO: Save the stocks in DB
     }
 }
