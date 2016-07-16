@@ -20,9 +20,11 @@ import java.util.*;
 
 public class UpdateRecordsRoute extends Middleware {
 
-    protected StockDataClient stockDataClient;
-    protected StockDBClient stockDBClient;
-    protected SimpleDateFormat dateFormat;
+    private StockDataClient stockDataClient;
+    private StockDBClient stockDBClient;
+    private SimpleDateFormat dateFormat;
+
+    private static final List<String> usStockSymbols = Arrays.asList("TSLA", "GOOG", "SCTY", "ZNGA", "AMD", "DIS", "TWTR", "SQ", "YHOO");
 
     public UpdateRecordsRoute(StockDataClient stockDataClient, StockDBClient stockDBClient) {
         this.stockDataClient = stockDataClient;
@@ -63,7 +65,6 @@ public class UpdateRecordsRoute extends Middleware {
 
     public void updateStocksForDate(Date dateObj) throws StockDataNotFoundForGivenDateException, NseDataObjParseException, IOException {
         //TODO : Find an API which will give all US stocks and use that
-        List<String> usStockSymbols = Arrays.asList("TSLA", "GOOG");
         Calendar from = Calendar.getInstance();
         from.setTime(dateObj);
 
