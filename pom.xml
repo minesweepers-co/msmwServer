@@ -62,7 +62,7 @@
     <dependency>
       <groupId>com.yahoofinance-api</groupId>
       <artifactId>YahooFinanceAPI</artifactId>
-      <version>3.3.0</version>
+      <version>3.4.0</version>
     </dependency>
     <!--Vertx provided dependencies-->
     <dependency>
