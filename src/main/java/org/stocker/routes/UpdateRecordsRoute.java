@@ -3,10 +3,7 @@ package org.stocker.routes;
 import com.jetdrone.vertx.yoke.Middleware;
 import com.jetdrone.vertx.yoke.middleware.YokeRequest;
 import com.jetdrone.vertx.yoke.middleware.YokeResponse;
-import org.stocker.exceptions.ErrorObjectAdapter;
-import org.stocker.exceptions.NseDataObjParseException;
-import org.stocker.exceptions.ServiceException;
-import org.stocker.exceptions.StockDataNotFoundForGivenDateException;
+import org.stocker.exceptions.*;
 import org.stocker.nasdaqData.NasdaqDataObj;
 import org.stocker.services.StockDBClient;
 import org.stocker.services.StockDataClient;
@@ -77,6 +74,8 @@ public class UpdateRecordsRoute extends Middleware {
             stocks.add(nasdaqDataObj);
         }
 
-        //TODO: Save the stocks in DB
+        for (NasdaqDataObj dataObj : stocks) {
+            stockDBClient.insert(dataObj);
+        }
     }
 }

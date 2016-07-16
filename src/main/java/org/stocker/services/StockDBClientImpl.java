@@ -3,6 +3,7 @@ package org.stocker.services;
 import com.google.common.base.Strings;
 import com.mongodb.*;
 import org.stocker.exceptions.StockReadException;
+import org.stocker.nasdaqData.NasdaqDataObj;
 import org.stocker.nseData.NseDataObj;
 import org.stocker.nseData.NseDataRow;
 import org.vertx.java.core.json.JsonArray;
@@ -74,5 +75,17 @@ public class StockDBClientImpl implements StockDBClient {
             response.add(jsonObject);
         }
         return response;
+    }
+
+    @Override
+    public boolean insert(NasdaqDataObj dataObj) {
+        BasicDBObject document = new BasicDBObject();
+        for(Map.Entry dataEntry : dataObj.rowData.entrySet()){
+            document.put(dataEntry.getKey().toString(), dataEntry.getValue().toString());
+        }
+
+        document.put(NseDataRow.TIMESTAMP.name(), dataObj.timestamp);
+        WriteResult result = stockCollection.insert(document);
+        return result.getLastError().ok();
     }
 }
